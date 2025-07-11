@@ -39,6 +39,21 @@ go mod init vs
 go mod tidy
 ```
 
+### CI/CD
+```bash
+# GitHub Actions workflow runs on push/PR to master
+# Tests across Go versions 1.18-1.21
+# Cross-platform builds available as artifacts
+```
+
+### Code Quality
+```bash
+# Run linting and static analysis
+go vet ./...
+go install honnef.co/go/tools/cmd/staticcheck@latest
+staticcheck ./...
+```
+
 ## Architecture
 
 ### Core Components
