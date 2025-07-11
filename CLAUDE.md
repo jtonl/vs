@@ -50,8 +50,19 @@ go mod tidy
 ```bash
 # Run linting and static analysis
 go vet ./...
-go install honnef.co/go/tools/cmd/staticcheck@latest
-staticcheck ./...
+
+# Alternative linters for Go ≤1.21 (staticcheck requires >1.21)
+# Option 1: revive (modern golint replacement)
+go install github.com/mgechev/revive@latest
+revive ./...
+
+# Option 2: golint (deprecated but functional)
+go install golang.org/x/lint/golint@latest
+golint ./...
+
+# Additional checks
+gofmt -l .
+go mod verify
 ```
 
 ## Architecture
