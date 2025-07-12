@@ -286,7 +286,7 @@ func TestMimeTypeDetection(t *testing.T) {
 	}{
 		{"test.mkv", []string{"video/x-matroska", "application/octet-stream"}}, // mkv varies by system
 		{"movie.mp4", []string{"video/mp4"}},
-		{"video.avi", []string{"video/x-msvideo", "video/avi", "application/octet-stream"}}, // AVI varies by system
+		{"video.avi", []string{"video/x-msvideo", "video/avi", "video/vnd.avi", "application/octet-stream"}}, // AVI varies by system
 		{"sample.mov", []string{"video/quicktime"}},
 	}
 	
