@@ -12,6 +12,7 @@ A lightweight, high-performance HTTP video streaming server written in Go. Strea
 - **Security**: Directory traversal protection
 - **Zero Dependencies**: Single binary using only Go standard library
 - **Cross-Platform**: Linux, Windows, macOS support
+- **Production Ready**: Comprehensive test suite with CI/CD validation
 
 ## 📥 Installation
 
@@ -27,6 +28,9 @@ chmod +x vs
 git clone https://github.com/jtonl/vs.git
 cd vs
 go build vs.go
+
+# Run tests to verify build
+go test -v
 ```
 
 ## 🎬 Quick Start
@@ -125,6 +129,30 @@ WantedBy=multi-user.target
 - **Directory traversal protection**: Prevents access outside specified video directory
 - **No file uploads**: Read-only server, no write operations
 - **No authentication**: Designed for trusted networks (add reverse proxy for auth)
+
+## 🧪 Testing & Quality
+
+Comprehensive test suite covering:
+- **HTTP Server**: Full file serving, error handling, status codes
+- **Range Requests**: Valid/invalid ranges, partial content (RFC 7233)
+- **Security**: Directory traversal prevention, access control
+- **File Browser**: HTML generation, video filtering, subdirectories
+- **Performance**: Benchmarks for serving, range requests, file listing
+- **Concurrency**: Race condition detection and concurrent access safety
+
+```bash
+# Run full test suite
+go test -v
+
+# Run with race detection
+go test -race -v
+
+# Run benchmarks
+go test -bench=. -v
+
+# Run with coverage report
+go test -cover -v
+```
 
 ## 🚀 Performance
 
