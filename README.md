@@ -58,10 +58,10 @@ mkdir videos
 # Copy your video files to videos/
 
 # Generate SSL certificates
-./scripts/generate-ssl.sh
+./deployment/scripts/generate-ssl.sh
 
 # Deploy with Docker Compose (includes Nginx reverse proxy)
-docker-compose up -d
+cd deployment/docker && docker-compose up -d
 
 # Access securely
 open https://localhost
@@ -164,8 +164,8 @@ For production deployments, use the included secure configuration with Nginx rev
 
 ```bash
 # Quick secure deployment with Docker
-./scripts/generate-ssl.sh
-docker-compose up -d
+./deployment/scripts/generate-ssl.sh
+cd deployment/docker && docker-compose up -d
 ```
 
 **Security Features:**
@@ -175,7 +175,7 @@ docker-compose up -d
 - **Network isolation**: Backend not directly exposed
 - **Health monitoring**: Built-in health checks
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for complete security deployment guide.
+See [deployment/README.md](deployment/README.md) for complete security deployment guide.
 
 ## 🧪 Testing & Quality
 
