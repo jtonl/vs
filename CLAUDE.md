@@ -25,10 +25,19 @@ go build vs.go
 
 ### Testing
 ```bash
-# Run Go tests (if any are added)
-go test ./...
+# Run all tests
+go test -v
 
-# Test streaming functionality
+# Run tests with race detection
+go test -race -v
+
+# Run benchmarks
+go test -bench=. -v
+
+# Run tests with coverage
+go test -cover -v
+
+# Test specific functionality manually
 curl -H "Range: bytes=0-1048576" http://localhost:32767/test-video.mkv
 ```
 
@@ -138,3 +147,31 @@ export VS_DIR=/path/to/videos
 - Currently designed for trusted network environments (no authentication)
 - Stateless design enables horizontal scaling and load balancing
 - Single binary deployment with minimal configuration requirements
+
+## Build and Deployment
+```bash
+# Build for current platform
+go build vs.go
+
+# Build for specific platforms (based on CI configuration)
+GOOS=linux GOARCH=amd64 go build -o vs-linux-amd64 vs.go
+GOOS=windows GOARCH=amd64 go build -o vs-windows-amd64.exe vs.go
+GOOS=darwin GOARCH=amd64 go build -o vs-darwin-amd64 vs.go
+```
+
+## Single File Architecture
+This application consists of a single Go file (`vs.go`) with no external dependencies. Key implementation details:
+- Main HTTP handler at vs.go:39-91 processes all requests
+- Range request logic at vs.go:93-166 implements RFC 7233 for video seeking
+- File browser template embedded at vs.go:200-233 for web interface
+- Security via filepath.Abs() prefix checking at vs.go:44-50
+
+## Test Coverage
+The test suite (`vs_test.go`) provides comprehensive coverage:
+- **HTTP Server Tests**: Full file serving, error handling, status codes
+- **Range Request Tests**: Valid ranges, invalid ranges, open-ended ranges, partial content
+- **Security Tests**: Directory traversal prevention, access control
+- **File Listing Tests**: HTML generation, video file filtering, subdirectory support
+- **MIME Type Tests**: Content-Type detection for various video formats
+- **Performance Tests**: Benchmarks for file serving, range requests, and file listing
+- **Race Condition Tests**: Concurrent access safety verification
