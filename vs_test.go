@@ -281,13 +281,13 @@ func TestMimeTypeDetection(t *testing.T) {
 	server := NewVideoServer("8080", tmpDir)
 	
 	testCases := []struct {
-		filename     string
-		expectedMime string
+		filename      string
+		acceptedMimes []string // Multiple acceptable MIME types for cross-platform compatibility
 	}{
-		{"test.mkv", ""},  // mkv might not have standard mime type
-		{"movie.mp4", "video/mp4"},
-		{"video.avi", "video/x-msvideo"},
-		{"sample.mov", "video/quicktime"},
+		{"test.mkv", []string{"video/x-matroska", "application/octet-stream"}}, // mkv varies by system
+		{"movie.mp4", []string{"video/mp4"}},
+		{"video.avi", []string{"video/x-msvideo", "video/avi", "application/octet-stream"}}, // AVI varies by system
+		{"sample.mov", []string{"video/quicktime"}},
 	}
 	
 	for _, tc := range testCases {
@@ -302,13 +302,25 @@ func TestMimeTypeDetection(t *testing.T) {
 			}
 			
 			contentType := rec.Header().Get("Content-Type")
-			if tc.expectedMime != "" && contentType != tc.expectedMime {
-				t.Errorf("Expected Content-Type '%s', got '%s'", tc.expectedMime, contentType)
-			}
 			
 			// Ensure some content type is set
 			if contentType == "" {
 				t.Error("Expected Content-Type header to be set")
+				return
+			}
+			
+			// Check if the detected MIME type is one of the accepted types
+			mimeAccepted := false
+			for _, acceptedMime := range tc.acceptedMimes {
+				if contentType == acceptedMime {
+					mimeAccepted = true
+					break
+				}
+			}
+			
+			if !mimeAccepted {
+				t.Errorf("Content-Type '%s' not in accepted types %v for file %s", 
+					contentType, tc.acceptedMimes, tc.filename)
 			}
 		})
 	}
