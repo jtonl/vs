@@ -10,6 +10,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            binary: vs-linux-amd64
+          - goos: linux
+            goarch: arm64
+            binary: vs-linux-arm64
+          - goos: windows
+            goarch: amd64
+            binary: vs-windows-amd64.exe
+          - goos: darwin
+            goarch: amd64
+            binary: vs-darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            binary: vs-darwin-arm64
+    
     steps:
     - uses: actions/checkout@v4
     
@@ -18,30 +38,11 @@ jobs:
       with:
         go-version: '1.21'
     
-    - name: Build for multiple platforms
-      run: |
-        # Build for Linux amd64
-        GOOS=linux GOARCH=amd64 go build -o vs-linux-amd64 vs.go
-        
-        # Build for Linux arm64
-        GOOS=linux GOARCH=arm64 go build -o vs-linux-arm64 vs.go
-        
-        # Build for Windows amd64
-        GOOS=windows GOARCH=amd64 go build -o vs-windows-amd64.exe vs.go
-        
-        # Build for macOS amd64
-        GOOS=darwin GOARCH=amd64 go build -o vs-darwin-amd64 vs.go
-        
-        # Build for macOS arm64
-        GOOS=darwin GOARCH=arm64 go build -o vs-darwin-arm64 vs.go
+    - name: Build for ${{ matrix.goos }} ${{ matrix.goarch }}
+      run: GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o ${{ matrix.binary }} vs.go
     
-    - name: Upload build artifacts
+    - name: Upload ${{ matrix.goos }} ${{ matrix.goarch }} artifact
       uses: actions/upload-artifact@v4
       with:
-        name: vs-binaries
-        path: |
-          vs-linux-amd64
-          vs-linux-arm64
-          vs-windows-amd64.exe
-          vs-darwin-amd64
-          vs-darwin-arm64
+        name: ${{ matrix.binary }}
+        path: ${{ matrix.binary }}
