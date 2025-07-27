@@ -243,10 +243,19 @@ type FileInfo struct {
 }
 
 func main() {
+	// Default values
 	videoDir := "."
 	port := "32767"
 
-	// Parse command line arguments
+	// Check environment variables first
+	if envPort := os.Getenv("VS_PORT"); envPort != "" {
+		port = envPort
+	}
+	if envDir := os.Getenv("VS_DIR"); envDir != "" {
+		videoDir = envDir
+	}
+
+	// Command line arguments override environment variables
 	if len(os.Args) > 1 {
 		videoDir = os.Args[1]
 	}
