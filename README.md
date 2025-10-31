@@ -35,6 +35,7 @@ go test -v
 
 ## 🎬 Quick Start
 
+### Simple Deployment
 ```bash
 # Start server with default settings (port 32767, current directory)
 ./vs
@@ -45,6 +46,33 @@ go test -v
 # Custom directory and port
 ./vs /path/to/movies 8080
 ```
+
+### Secure Production Deployment
+```bash
+# Clone repository
+git clone https://github.com/jtonl/vs.git
+cd vs
+
+# Create video directory and add your files
+mkdir videos
+# Copy your video files to videos/
+
+# Generate SSL certificates
+./deployment/scripts/generate-ssl.sh
+
+# Deploy with Docker Compose (includes Nginx reverse proxy)
+cd deployment/docker && docker-compose up -d
+
+# Access securely
+open https://localhost
+```
+
+**What you get:**
+- HTTPS with SSL/TLS encryption
+- Rate limiting and DDoS protection
+- Security headers (XSS, CSRF protection)
+- Health monitoring at `/health`
+- Network-isolated backend
 
 ## 📺 Usage
 
@@ -129,6 +157,25 @@ WantedBy=multi-user.target
 - **Directory traversal protection**: Prevents access outside specified video directory
 - **No file uploads**: Read-only server, no write operations
 - **No authentication**: Designed for trusted networks (add reverse proxy for auth)
+
+### Production Security with Nginx
+
+For production deployments, use the included secure configuration with Nginx reverse proxy:
+
+```bash
+# Quick secure deployment with Docker
+./deployment/scripts/generate-ssl.sh
+cd deployment/docker && docker-compose up -d
+```
+
+**Security Features:**
+- **Rate limiting**: 10 req/s API, 5 req/s video files
+- **Security headers**: XSS, CSRF, clickjacking protection
+- **SSL/TLS encryption**: HTTPS with modern ciphers
+- **Network isolation**: Backend not directly exposed
+- **Health monitoring**: Built-in health checks
+
+See [deployment/README.md](deployment/README.md) for complete security deployment guide.
 
 ## 🧪 Testing & Quality
 
