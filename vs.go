@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"io"
@@ -8,35 +9,125 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 )
 
 type VideoServer struct {
-	port     string
-	videoDir string
+	port      string
+	videoDir  string
+	startTime time.Time
 }
 
 func NewVideoServer(port, videoDir string) *VideoServer {
 	return &VideoServer{
-		port:     port,
-		videoDir: videoDir,
+		port:      port,
+		videoDir:  videoDir,
+		startTime: time.Now(),
 	}
 }
 
 func (vs *VideoServer) Start() {
-	http.HandleFunc("/", vs.handleRequest)
+	// Set up HTTP handler with logging middleware
+	http.HandleFunc("/", vs.loggingMiddleware(vs.handleRequest))
 
-	fmt.Printf("Starting video streaming server on port %s\n", vs.port)
-	fmt.Printf("Serving files from: %s\n", vs.videoDir)
-	fmt.Printf("Access videos at: http://0.0.0.0:%s/filename.mkv\n", vs.port)
+	// Create HTTP server
+	server := &http.Server{
+		Addr: ":" + vs.port,
+	}
 
-	log.Fatal(http.ListenAndServe(":"+vs.port, nil))
+	// Set up graceful shutdown
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	// Start server in a goroutine
+	go func() {
+		fmt.Printf("Starting video streaming server on port %s\n", vs.port)
+		fmt.Printf("Serving files from: %s\n", vs.videoDir)
+		fmt.Printf("Access videos at: http://0.0.0.0:%s/filename.mkv\n", vs.port)
+		fmt.Printf("Health check available at: http://0.0.0.0:%s/health\n", vs.port)
+
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server error: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal
+	<-stop
+	log.Println("\nShutting down server gracefully...")
+
+	// Create shutdown context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Attempt graceful shutdown
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("Server shutdown error: %v", err)
+	} else {
+		log.Println("Server stopped")
+	}
+}
+
+// loggingMiddleware wraps the handler with structured logging
+func (vs *VideoServer) loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		// Create a response writer wrapper to capture status code and bytes written
+		lrw := &loggingResponseWriter{
+			ResponseWriter: w,
+			statusCode:     http.StatusOK,
+		}
+
+		// Call the next handler
+		next(lrw, r)
+
+		// Log the request
+		duration := time.Since(start)
+		log.Printf("[%s] %s %s - %d - %d bytes - %v",
+			start.Format(time.RFC3339),
+			r.Method,
+			r.URL.Path,
+			lrw.statusCode,
+			lrw.bytesWritten,
+			duration,
+		)
+	}
+}
+
+// loggingResponseWriter wraps http.ResponseWriter to capture status code and bytes written
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	statusCode   int
+	bytesWritten int
+}
+
+func (lrw *loggingResponseWriter) WriteHeader(code int) {
+	lrw.statusCode = code
+	lrw.ResponseWriter.WriteHeader(code)
+}
+
+func (lrw *loggingResponseWriter) Write(b []byte) (int, error) {
+	n, err := lrw.ResponseWriter.Write(b)
+	lrw.bytesWritten += n
+	return n, err
 }
 
 func (vs *VideoServer) handleRequest(w http.ResponseWriter, r *http.Request) {
+	// Handle health check endpoint
+	if r.URL.Path == "/health" {
+		uptime := time.Since(vs.startTime)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"ok","uptime":"%s"}`, uptime.String())
+		return
+	}
+
 	// Get file path from URL
 	filePath := strings.TrimPrefix(r.URL.Path, "/")
 	fullPath := filepath.Join(vs.videoDir, filePath)

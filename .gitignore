@@ -1,0 +1,21 @@
+# Compiled binaries
+vs
+vs.exe
+vs-*
+
+# Test binaries
+*.test
+
+# Go build cache
+*.out
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

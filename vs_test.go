@@ -345,6 +345,37 @@ func TestSubdirectoryAccess(t *testing.T) {
 	}
 }
 
+func TestHealthEndpoint(t *testing.T) {
+	tmpDir := setupTestFiles(t)
+	server := NewVideoServer("8080", tmpDir)
+
+	req := httptest.NewRequest("GET", "/health", nil)
+	rec := httptest.NewRecorder()
+
+	server.handleRequest(rec, req)
+
+	// Check status code
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	// Check content type
+	contentType := rec.Header().Get("Content-Type")
+	if contentType != "application/json" {
+		t.Errorf("Expected Content-Type 'application/json', got '%s'", contentType)
+	}
+
+	// Check response contains expected fields
+	body := rec.Body.String()
+	if !strings.Contains(body, `"status":"ok"`) {
+		t.Error("Expected health response to contain status:ok")
+	}
+
+	if !strings.Contains(body, `"uptime"`) {
+		t.Error("Expected health response to contain uptime field")
+	}
+}
+
 // Benchmark tests for performance
 func BenchmarkHandleRequest_FullFile(b *testing.B) {
 	tmpDir := b.TempDir()
